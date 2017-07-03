@@ -3,6 +3,7 @@ package middleware
 import (
 	"time"
 
+	"github.com/davidborka/chatApp/api/auth"
 	jwt "github.com/dgrijalva/jwt-go"
 )
 
@@ -23,7 +24,7 @@ func GenerateAuthToken(clientLogin string) string {
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
-	signedToken, _ := token.SignedString(SigningKey)
+	signedToken, _ := token.SignedString(auth.SigningKey)
 	return signedToken
 
 }

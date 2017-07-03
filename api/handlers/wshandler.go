@@ -4,13 +4,25 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/davidborka/chatApp/api/model"
+
 	"golang.org/x/net/websocket"
 )
 
+var AllConnection model.Connection
+
+type ConnectionChan struct {
+	removeConnection chan *model.Client
+	addConnection    chan *websocket.Conn
+	newMassege       chan *model.Message
+	listConnect      chan bool
+	count            int
+}
+
 var Connect = ConnectionChan{
-	removeConnection: make(chan *Client),
+	removeConnection: make(chan *model.Client),
 	addConnection:    make(chan *websocket.Conn),
-	newMassege:       make(chan *Message),
+	newMassege:       make(chan *model.Message),
 	listConnect:      make(chan bool),
 	count:            0,
 }
@@ -61,7 +73,7 @@ func HandleChatRoom(ws *websocket.Conn) {
 	//var newMessageFromWS Message
 
 	var temp *websocket.Conn
-	var newMessageFromWs Message
+	var newMessageFromWs model.Message
 	temp = ws
 	Connect.addConnection <- temp
 	fmt.Println("Login user #6")
@@ -77,6 +89,6 @@ func HandleChatRoom(ws *websocket.Conn) {
 
 	}
 }
-func sendMessage(ws *websocket.Conn, message *Message) {
+func sendMessage(ws *websocket.Conn, message *model.Message) {
 	websocket.JSON.Send(ws, message)
 }

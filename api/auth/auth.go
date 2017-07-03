@@ -11,14 +11,17 @@ import (
 	jwt "github.com/dgrijalva/jwt-go"
 )
 
+var (
+	err         error
+	privKey     *rsa.PrivateKey
+	pubKey      *rsa.PublicKey
+	pubKeyBytes []byte
+	SigningKey  *rsa.PrivateKey
+	VerifyKey   *rsa.PublicKey
+)
+
 //InitKeys init public and private RSA key.
 func InitKeys() {
-	var (
-		err         error
-		privKey     *rsa.PrivateKey
-		pubKey      *rsa.PublicKey
-		pubKeyBytes []byte
-	)
 
 	privKey, err = rsa.GenerateKey(cryptorand.Reader, 2048)
 	if err != nil {
@@ -38,7 +41,7 @@ func InitKeys() {
 	//done
 	signingKeyb := privKeyPEMBuffer.Bytes()
 	SigningKey, _ := jwt.ParseRSAPrivateKeyFromPEM(signingKeyb)
-	log.Fatal(SigningKey)
+	log.Print(SigningKey)
 	// create verificationKey from pubKey. Also in PEM-format
 	pubKeyBytes, err = x509.MarshalPKIXPublicKey(pubKey) //serialize key bytes
 	if err != nil {
@@ -57,5 +60,5 @@ func InitKeys() {
 
 	VerifyKey, _ := jwt.ParseECPublicKeyFromPEM(verifyKeyB)
 	// done
-	log.Fatal(VerifyKey)
+	log.Print(VerifyKey)
 }

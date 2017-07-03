@@ -1,20 +1,23 @@
 package handlers
 
-import "github.com/couchbase/gocb"
+import (
+	"github.com/couchbase/gocb"
+	"github.com/davidborka/chatApp/api/model"
+)
 
-func ListAllMessage(cliens Client, bucket *gocb.Bucket) []Message {
-	var searchCliens Client
+func ListAllMessage(cliens model.Client, bucket *gocb.Bucket) []model.Message {
+	var searchCliens model.Client
 	bucket.Get(cliens.Inner.LoginName, &searchCliens)
 	return searchCliens.Inner.Messages
 }
-func AddMessageClient(client *Client, message Message, bucket *gocb.Bucket) {
+func AddMessageClient(client *model.Client, message model.Message, bucket *gocb.Bucket) {
 	client.Inner.Messages = append(client.Inner.Messages, message)
 	bucket.Upsert(client.Inner.LoginName, client, 0)
 
 }
 
-func MessageSaveToClient(message *Message, client Client) {
-	var sClient Client
+func MessageSaveToClient(message *model.Message, client model.Client) {
+	var sClient model.Client
 	cluster, _ := gocb.Connect("couchbase://localhost")
 	bucket, _ := cluster.OpenBucket("chatapp", "")
 	bucket.Get(client.Inner.LoginName, &sClient)
