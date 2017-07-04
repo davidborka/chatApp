@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"time"
@@ -8,6 +9,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 	"golang.org/x/net/websocket"
 
+	"github.com/couchbase/gocb"
 	"github.com/davidborka/chatApp/api/auth"
 	"github.com/davidborka/chatApp/api/dbconnect"
 	"github.com/davidborka/chatApp/api/middleware"
@@ -149,4 +151,28 @@ func CompareUserPassword(hashedPassword []byte, password string) bool {
 		return false
 	}
 	return true
+}
+func GetMessageToClient(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
+	fmt.Println("Get message")
+	var filteredMessage []model.Message
+	cookie, _ := r.Cookie("Auth")
+	cluster, _ := gocb.Connect("couchbase://localhost")
+	friendname := params.ByName("loginname")
+	bucket, _ := cluster.OpenBucket("chatapp", "")
+	var myProfile model.Client
+	bucket.Get(LoginClients[cookie.Value].Inner.LoginName, &myProfile)
+	if friendname != "" {
+		for _, messageValue := range myProfile.Inner.Messages {
+			if messageValue.Inner.FromLoginName == friendname || messageValue.Inner.ToLoginName == friendname {
+				filteredMessage = append(filteredMessage, messageValue)
+			}
+		}
+	} else {
+		for _, messageValue := range myProfile.Inner.Messages {
+			filteredMessage = append(filteredMessage, messageValue)
+
+		}
+	}
+	json.NewEncoder(w).Encode(filteredMessage)
+
 }
