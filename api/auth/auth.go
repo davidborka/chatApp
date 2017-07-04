@@ -7,21 +7,18 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"log"
-
-	jwt "github.com/dgrijalva/jwt-go"
 )
 
 var (
-	err         error
-	privKey     *rsa.PrivateKey
-	pubKey      *rsa.PublicKey
-	pubKeyBytes []byte
-	SigningKey  *rsa.PrivateKey
-	VerifyKey   *rsa.PublicKey
+	err                   error
+	privKey               *rsa.PrivateKey
+	pubKey                *rsa.PublicKey
+	pubKeyBytes           []byte
+	SigningKey, VerifyKey []byte
 )
 
 //InitKeys init public and private RSA key.
-func InitKeys() {
+func InitKeys() ([]byte, []byte) {
 
 	privKey, err = rsa.GenerateKey(cryptorand.Reader, 2048)
 	if err != nil {
@@ -40,8 +37,11 @@ func InitKeys() {
 	pem.Encode(privKeyPEMBuffer, privPEMBlock)
 	//done
 	signingKeyb := privKeyPEMBuffer.Bytes()
-	SigningKey, _ := jwt.ParseRSAPrivateKeyFromPEM(signingKeyb)
-	log.Print(SigningKey)
+	//SigningKey, err := jwt.ParseRSAPrivateKeyFromPEM(signingKeyb)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	// create verificationKey from pubKey. Also in PEM-format
 	pubKeyBytes, err = x509.MarshalPKIXPublicKey(pubKey) //serialize key bytes
 	if err != nil {
@@ -58,7 +58,7 @@ func InitKeys() {
 	pem.Encode(pubKeyPEMBuffer, pubPEMBlock)
 	verifyKeyB := pubKeyPEMBuffer.Bytes()
 
-	VerifyKey, _ := jwt.ParseECPublicKeyFromPEM(verifyKeyB)
+	//VerifyKey, _ := jwt.ParseECPublicKeyFromPEM(verifyKeyB)
 	// done
-	log.Print(VerifyKey)
+	return signingKeyb, verifyKeyB
 }

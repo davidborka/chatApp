@@ -32,13 +32,6 @@ type Message struct {
 }
 
 //ConnectionChan
-type ConnectionChan struct {
-	removeConnection chan *Client
-	addConnection    chan *websocket.Conn
-	newMassege       chan *Message
-	listConnect      chan bool
-	count            int
-}
 
 //OnlineClient
 type OnlineClient struct {

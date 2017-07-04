@@ -28,6 +28,7 @@ func Logout(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	http.Handler(validateHttp(logout)).ServeHTTP(w, r)
 }
 func Websocket(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	fmt.Print("websocket")
 	websocket.Handler(HandleChatRoom).ServeHTTP(w, r)
 }
 func LoginHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
@@ -66,10 +67,9 @@ func validateHttp(page http.HandlerFunc) http.HandlerFunc {
 		}
 		fmt.Println("Login user #3")
 		token, err := jwt.ParseWithClaims(cookie.Value, &middleware.Claims{}, func(token *jwt.Token) (interface{}, error) {
-			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-				return nil, fmt.Errorf("Unexpected signing method")
-			}
-			return auth.VerifyKey, nil
+
+			key, _ := jwt.ParseRSAPublicKeyFromPEM(auth.VerifyKey)
+			return key, nil
 		})
 		if err != nil {
 			http.NotFound(w, r)

@@ -9,7 +9,9 @@ import (
 	"golang.org/x/net/websocket"
 )
 
-var AllConnection model.Connection
+var (
+	AllConnection = model.Connection{make(map[*websocket.Conn]model.Client)}
+)
 
 type ConnectionChan struct {
 	removeConnection chan *model.Client
@@ -71,10 +73,12 @@ func (connect *ConnectionChan) StartConnection() {
 }
 func HandleChatRoom(ws *websocket.Conn) {
 	//var newMessageFromWS Message
-
+	go Connect.StartConnection()
+	time.Sleep(time.Second * 3)
 	var temp *websocket.Conn
 	var newMessageFromWs model.Message
 	temp = ws
+	fmt.Print("add connect")
 	Connect.addConnection <- temp
 	fmt.Println("Login user #6")
 	for {

@@ -9,11 +9,9 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
-var Connect handlers.ConnectionChan
-
 func StartServer() {
-	auth.InitKeys()
-	go Connect.StartConnection()
+	auth.SigningKey, auth.VerifyKey = auth.InitKeys()
+
 	router := httprouter.New()
 	router.NotFound = http.FileServer(http.Dir("public/"))
 	//router.ServeFiles("/public/*filepath", http.Dir("./public"))
