@@ -27,10 +27,10 @@
         var tologin = document.getElementById("cim").value
         var text = document.getElementById("textbox").value;
           var messageObj = {
-            newmessage:{
+            
                 tologinname: tologin,
-                content: text 
-            }
+                content: text, 
+            
         };     
             socket.send(JSON.stringify(messageObj))
         });

@@ -6,6 +6,7 @@ import (
 
 	"github.com/davidborka/chatApp/api/model"
 
+	"github.com/davidborka/chatApp/api/dbconnect"
 	"golang.org/x/net/websocket"
 )
 
@@ -43,10 +44,10 @@ func (connect *ConnectionChan) StartConnection() {
 			for k := range AllConnection.ActiveCLient {
 				websocket.JSON.Send(k, ListActiveCliens(AllConnection))
 			}
-			defer close(connect.addConnection)
+
 		case conn := <-connect.removeConnection:
 			for k, v := range AllConnection.ActiveCLient {
-				if conn.Inner.LoginName == v.Inner.LoginName {
+				if conn.LoginName == v.LoginName {
 
 					delete(AllConnection.ActiveCLient, k)
 					k.Close()
@@ -57,16 +58,20 @@ func (connect *ConnectionChan) StartConnection() {
 			for k := range AllConnection.ActiveCLient {
 				websocket.JSON.Send(k, ListActiveCliens(AllConnection))
 			}
-			defer close(connect.removeConnection)
-		case message := <-connect.newMassege:
-			for k, v := range AllConnection.ActiveCLient {
-				if v.Inner.LoginName == message.Inner.ToLoginName || v.Inner.LoginName == message.Inner.FromLoginName {
-					sendMessage(k, message)
-					MessageSaveToClient(message, v)
-				}
 
+		case message := <-connect.newMassege:
+
+			for k, v := range AllConnection.ActiveCLient {
+
+				if v.LoginName == message.ToLoginName {
+					sendMessage(k, message)
+				} else if v.LoginName == message.FromLoginName {
+
+					sendMessage(k, message)
+				}
 			}
-			defer close(connect.newMassege)
+			time.Sleep(time.Second * 2)
+
 		}
 
 	}
@@ -84,11 +89,21 @@ func HandleChatRoom(ws *websocket.Conn) {
 	for {
 
 		if err := websocket.JSON.Receive(ws, &newMessageFromWs); err == nil {
-			fmt.Println(newMessageFromWs.Inner.ToLoginName)
-			newMessageFromWs.Inner.FromLoginName = AllConnection.ActiveCLient[ws].Inner.LoginName
-			newMessageFromWs.Inner.TimeStamp = time.Now()
+			fmt.Println(newMessageFromWs.ToLoginName)
+			newMessageFromWs.FromLoginName = AllConnection.ActiveCLient[ws].LoginName
+			newMessageFromWs.TimeStamp = time.Now()
 			Connect.newMassege <- &newMessageFromWs
-			time.Sleep(time.Second * 2)
+			var id string
+			id = NexusIsExixst(newMessageFromWs.FromLoginName, newMessageFromWs.ToLoginName)
+			if id == "NOT FOUND" {
+				id = UuidGenerator()
+				AddMessageClient(id, &newMessageFromWs, dbconnect.DatabaseConnectionMessage())
+				AddConversations(newMessageFromWs.FromLoginName, newMessageFromWs.ToLoginName, id)
+
+			} else {
+				AddMessageClient(id, &newMessageFromWs, dbconnect.DatabaseConnectionMessage())
+			}
+
 		}
 
 	}

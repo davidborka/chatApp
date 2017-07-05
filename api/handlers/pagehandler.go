@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"time"
@@ -9,12 +8,12 @@ import (
 	"golang.org/x/crypto/bcrypt"
 	"golang.org/x/net/websocket"
 
-	"github.com/couchbase/gocb"
 	"github.com/davidborka/chatApp/api/auth"
 	"github.com/davidborka/chatApp/api/dbconnect"
 	"github.com/davidborka/chatApp/api/middleware"
 	"github.com/davidborka/chatApp/api/model"
 	jwt "github.com/dgrijalva/jwt-go"
+
 	"github.com/julienschmidt/httprouter"
 )
 
@@ -35,22 +34,21 @@ func Websocket(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 }
 func LoginHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 
-	bucket := dbconnect.DatabaseConnection()
 	fmt.Println("Login user #1")
-	if _, err := bucket.Get(r.FormValue("username"), &LoginClient); err != nil {
+	if err := FinduserUuid(r.FormValue("username"), &LoginClient); err != nil {
 
 		fmt.Println("Cant find the user")
 		http.Redirect(w, r, "/", 307)
 		return
 	}
-	if !(CompareUserPassword(LoginClient.Inner.Password, r.FormValue("password"))) {
+	if !(CompareUserPassword(LoginClient.Password, r.FormValue("password"))) {
 		fmt.Println("wrong pass")
 		http.Redirect(w, r, "/", 307)
 		w.WriteHeader(http.StatusForbidden)
 		return
 	}
 	expireCookie := time.Now().Add(time.Minute * 25)
-	signedToken := middleware.GenerateAuthToken(LoginClient.Inner.LoginName)
+	signedToken := middleware.GenerateAuthToken(LoginClient.LoginName)
 	cookie := http.Cookie{Name: "Auth", Value: signedToken, Expires: expireCookie, HttpOnly: true}
 	LoginClients[signedToken] = LoginClient
 	http.SetCookie(w, &cookie)
@@ -90,22 +88,25 @@ func validateHttp(page http.HandlerFunc) http.HandlerFunc {
 	})
 }
 func RegisterNewClient(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	bucket := dbconnect.DatabaseConnection()
+	bucket := dbconnect.DatabaseConnectionUsers()
 	var newClient model.Client
+
 	clientIsOk := true
 	if r.Method == "POST" {
-		newClient.Inner.LoginName = r.FormValue("username")
-		newClient.Inner.Email = r.FormValue("email")
+		newClient.LoginName = r.FormValue("username")
+		newClient.Email = r.FormValue("email")
 	}
+	newClient.Uuid = UuidGenerator()
 	password := CreatePasswordHash(r.FormValue("password"))
-	newClient.Inner.Password = password
+	newClient.Password = password
 	allClient := ListAllClientFromDb(bucket)
 	for _, v := range allClient {
-		if newClient.Inner.LoginName == v.Inner.LoginName {
+		if newClient.LoginName == v.Chatapp.LoginName {
 			clientIsOk = false
 		}
 	}
 	if clientIsOk {
+
 		if err := AddClient(newClient, bucket); !err {
 			fmt.Println("Cant create the user")
 		}
@@ -119,6 +120,7 @@ func RegisterNewClient(w http.ResponseWriter, r *http.Request, _ httprouter.Para
 
 }
 func protectedProfile(w http.ResponseWriter, r *http.Request) {
+
 	fmt.Println("Login user #5")
 	http.ServeFile(w, r, "public/profile.html")
 
@@ -152,6 +154,8 @@ func CompareUserPassword(hashedPassword []byte, password string) bool {
 	}
 	return true
 }
+
+/*
 func GetMessageToClient(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 	fmt.Println("Get message")
 	var filteredMessage []model.Message
@@ -175,4 +179,4 @@ func GetMessageToClient(w http.ResponseWriter, r *http.Request, params httproute
 	}
 	json.NewEncoder(w).Encode(filteredMessage)
 
-}
+}*/

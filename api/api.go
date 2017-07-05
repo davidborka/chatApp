@@ -22,11 +22,12 @@ func StartServer() {
 	router.GET("/logout", handlers.Logout)
 	router.GET("/chat", handlers.Websocket)
 	//List Message
-
-	router.GET("/message", handlers.GetMessageToClient)
-	router.GET("/message/:loginname", handlers.GetMessageToClient)
-
+	/*
+		router.GET("/message", handlers.GetMessageToClient)
+		router.GET("/message/:loginname", handlers.GetMessageToClient)
+	*/
 	if err := http.ListenAndServe(":9000", router); err != nil {
 		log.Fatal("ListenAndServe:", err)
 	}
+
 }
